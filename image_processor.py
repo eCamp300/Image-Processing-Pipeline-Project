@@ -5,8 +5,9 @@ Handles aspect ratio scaling, masking, and 3D perspective distortion.
 
 from wand.image import Image
 import config
+import io
 
-def generate_mockup(image_binary, output_path):
+def generate_mockup(image_binary):
     """Transforms a flat 2D image to fit a 3D physical card markup"""
 
     with Image(blob=image_binary) as card_image, Image(filename=config.CARD_TEMPLATE) as template:
@@ -17,6 +18,11 @@ def generate_mockup(image_binary, output_path):
 
         # Calculate the resize ratio
         ratio = min(CARD_WIDTH / card_image.width, CARD_HEIGHT / card_image.height)
+
+        #Prevent upscaling small images so they do not become pixelated
+        if ratio > 1.0:
+            ratio = 1.0
+
         new_width = int(card_image.width * ratio)
         new_height = int(card_image.height * ratio)
 
@@ -48,4 +54,9 @@ def generate_mockup(image_binary, output_path):
         # Composite the skewed image directly onto the cloned template
         with template.clone() as final_mockup:
             final_mockup.composite(card_image, left=0, top=0)
-            final_mockup.save(filename=output_path)
+
+            # Save final composite to an in-memory byte buffer for web streaming
+            img_buffer = io.BytesIO()
+            final_mockup.save(file=img_buffer)
+            img_buffer.seek(0)
+            return img_buffer

@@ -1,3 +1,7 @@
+"""
+This file replaces main.py with FastAPI.
+"""
+
 from fastapi import FastAPI, HTTPException, Response
 from data_handler import get_image_from_url
 from image_processor import generate_mockup
